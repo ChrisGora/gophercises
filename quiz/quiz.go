@@ -33,7 +33,7 @@ func questions() []questionT {
 	return questions
 }
 
-func ask(s score, question questionT) score {
+func ask(question questionT, correct chan bool) {
 	fmt.Println(question.q)
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("Enter answer: ")
@@ -41,17 +41,44 @@ func ask(s score, question questionT) score {
 	text := scanner.Text()
 	if strings.Compare(text, question.a) == 0 {
 		fmt.Println("Correct!")
-		s++
+		correct <- true
 	} else {
 		fmt.Println("Incorrect :-(")
+		correct <- false
 	}
-	return s
+}
+
+//func timer() {
+//
+//}
+
+func quiz(exit chan bool) {
+	s := score(0)
+	qs := questions()
+	correct := make(chan bool)
+	i := 0
+
+	go ask(qs[i], correct)
+
+	for {
+		select {
+		case c := <-correct:
+			if c {
+				s++
+			}
+			i++
+			if i < len(qs) {
+				go ask(qs[i], correct)
+			} else {
+				fmt.Println("End of questions, Final score", s)
+				exit <- true
+			}
+		}
+	}
 }
 
 func main() {
-	s := score(0)
-	for _, q := range questions() {
-		s = ask(s, q)
-	}
-	fmt.Println("Final score", s)
+	exit := make(chan bool)
+	go quiz(exit)
+	<-exit
 }
