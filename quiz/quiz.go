@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 type questionT struct {
 	q, a string
 }
 
-type score int
+type scoreT int
 
 func check(e error) {
 	if e != nil {
@@ -48,31 +49,33 @@ func ask(question questionT, correct chan bool) {
 	}
 }
 
-//func timer() {
-//
-//}
-
 func quiz(exit chan bool) {
-	s := score(0)
 	qs := questions()
+	score := scoreT(0)
 	correct := make(chan bool)
-	i := 0
+	current := 0
 
-	go ask(qs[i], correct)
+	go ask(qs[current], correct)
+	timeOver := time.After(5 * time.Second)
 
 	for {
 		select {
+
 		case c := <-correct:
 			if c {
-				s++
+				score++
 			}
-			i++
-			if i < len(qs) {
-				go ask(qs[i], correct)
+			current++
+			if current < len(qs) {
+				go ask(qs[current], correct)
 			} else {
-				fmt.Println("End of questions, Final score", s)
+				fmt.Println("End of questions, final score", score)
 				exit <- true
 			}
+
+		case <-timeOver:
+			fmt.Println("Timed out, final score", score)
+			exit <- true
 		}
 	}
 }
