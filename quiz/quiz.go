@@ -27,9 +27,12 @@ func questions() []questionT {
 	reader := csv.NewReader(f)
 	table, err := reader.ReadAll()
 	check(err)
-	var questions []questionT
-	for _, row := range table {
-		questions = append(questions, questionT{q: row[0], a: row[1]})
+	questions := make([]questionT, len(table))
+	for i, row := range table {
+		questions[i] = questionT{
+			q: row[0],
+			a: row[1],
+		}
 	}
 	return questions
 }
